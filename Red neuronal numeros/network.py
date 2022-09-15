@@ -37,6 +37,10 @@ class Network(object):
         self.biases = [np.random.randn(y, 1) for y in sizes[1:]]
         self.weights = [np.random.randn(y, x)
                         for x, y in zip(sizes[:-1], sizes[1:])]
+        self.velocidades_b = [np.random.randn(y, 1) for y in sizes[1:]]
+        self.velocidades_w = [np.random.randn(y, x)
+                        for x, y in zip(sizes[:-1], sizes[1:])]
+        
 
     def feedforward(self, a):
         """Return the output of the network if ``a`` is input."""
@@ -85,10 +89,10 @@ class Network(object):
             delta_nabla_b, delta_nabla_w = self.backprop(x, y)
             nabla_b = [nb+dnb for nb, dnb in zip(nabla_b, delta_nabla_b)]
             nabla_w = [nw+dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
-        self.weights = [w-(eta/len(mini_batch))*nw
-                        for w, nw in zip(self.weights, nabla_w)]
-        self.biases = [b-(eta/len(mini_batch))*nb
-                       for b, nb in zip(self.biases, nabla_b)]
+        self.velocidades_w = [-nw+(1-0.9)*v for v,nw in zip(self.velocidades_w,nabla_w)]
+        self.velocidades_b = [-nb+(1-0.9)*v for v,nb in zip(self.velocidades_b,nabla_b)]
+        self.weights = [w+v for w, v in zip(self.weights, self.velocidades_w)]
+        self.biases = [b+v for b, v in zip(self.biases, self.velocidades_b)]
 
     def backprop(self, x, y):
         """Return a tuple ``(nabla_b, nabla_w)`` representing the
