@@ -37,8 +37,9 @@ class Network(object):
         self.biases = [np.random.randn(y, 1) for y in sizes[1:]]
         self.weights = [np.random.randn(y, x)
                         for x, y in zip(sizes[:-1], sizes[1:])]
-        self.velocidades_b = [np.random.randn(y, 1) for y in sizes[1:]]
-        self.velocidades_w = [np.random.randn(y, x)
+        self.gamma=0.9
+        self.vb = [np.random.randn(y, 1) for y in sizes[1:]]
+        self.vw = [np.random.randn(y, x)
                         for x, y in zip(sizes[:-1], sizes[1:])]
         
 
@@ -89,10 +90,11 @@ class Network(object):
             delta_nabla_b, delta_nabla_w = self.backprop(x, y)
             nabla_b = [nb+dnb for nb, dnb in zip(nabla_b, delta_nabla_b)]
             nabla_w = [nw+dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
-        self.velocidades_w = [-nw+(1-0.9)*v for v,nw in zip(self.velocidades_w,nabla_w)]
-        self.velocidades_b = [-nb+(1-0.9)*v for v,nb in zip(self.velocidades_b,nabla_b)]
-        self.weights = [w+v for w, v in zip(self.weights, self.velocidades_w)]
-        self.biases = [b+v for b, v in zip(self.biases, self.velocidades_b)]
+        self.vw = [-nw+(1-self.gamma)*v for v,nw in zip(self.vw,nabla_w)]
+        self.vb = [-nb+(1-self.gamma)*v for v,nb in zip(self.vb,nabla_b)]
+        self.weights = [w+(eta/len(mini_batch))*v for w, v in zip(self.weights, self.vw)]
+        self.biases = [b+(eta/len(mini_batch))*v for b, v in zip(self.biases, self.vb)]
+
 
     def backprop(self, x, y):
         """Return a tuple ``(nabla_b, nabla_w)`` representing the
@@ -111,8 +113,7 @@ class Network(object):
             activation = sigmoid(z)
             activations.append(activation)
         # backward pass
-        delta = self.cost_derivative(activations[-1], y) * \
-            sigmoid_prime(zs[-1])
+        delta = self.cost_derivative(activations[-1], y) 
         nabla_b[-1] = delta
         nabla_w[-1] = np.dot(delta, activations[-2].transpose())
         # Note that the variable l in the loop below is used a little
